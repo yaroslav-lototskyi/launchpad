@@ -107,6 +107,9 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: build-and-push
+    permissions:
+      contents: read
+      security-events: write
     strategy:
       matrix:
         service: [api, client]
@@ -126,7 +129,7 @@ jobs:
           output: 'trivy-results-${{ matrix.service }}.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
           category: 'trivy-${{ matrix.service }}'
