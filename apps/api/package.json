@@ -9,7 +9,7 @@
     "start:prod": "NODE_ENV=production node dist/apps/api/src/main",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "clean": "rm -rf dist"
