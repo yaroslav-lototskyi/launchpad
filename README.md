@@ -19,11 +19,16 @@ This project demonstrates a production-ready setup for deploying full-stack appl
 launchpad/
 ├── apps/
 │   ├── api/                    # NestJS backend API
+│   │   └── deployment/         # Docker configs (dev/prod)
 │   └── client/                 # Vite + React frontend
+│       └── deployment/         # Docker configs + Nginx
 ├── packages/
 │   └── shared/                 # Shared TypeScript types
-├── infra/
-│   ├── terraform/              # AWS infrastructure as code
+├── deployment/                 # Environment-specific configs
+│   ├── development/            # Dev docker-compose
+│   └── production/             # Prod docker-compose
+├── infra/                      # Infrastructure as code (Phase 3+)
+│   ├── terraform/              # AWS infrastructure
 │   ├── helm/                   # Kubernetes Helm charts
 │   └── argocd/                 # Argo CD applications
 ├── .github/
@@ -38,9 +43,9 @@ launchpad/
 
 - Node.js >= 20.0.0
 - pnpm >= 8.0.0
-- Docker Desktop (for Phase 1+)
+- Docker Desktop (recommended for Phase 1+)
 
-### Installation
+### Local Development (without Docker)
 
 ```bash
 # Install dependencies
@@ -54,13 +59,36 @@ cp apps/client/.env.example apps/client/.env
 pnpm dev
 ```
 
+### Docker Development (recommended)
+
+```bash
+# Quick setup script
+./scripts/setup-local.sh
+
+# Start in development mode (with hot reload)
+./scripts/docker-up.sh dev
+
+# Or start in production mode
+./scripts/docker-up.sh prod
+```
+
 ### Accessing the Application
+
+**Local Development:**
 
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3001
 - **Health Check**: http://localhost:3001/api/v1/health
 
+**Docker Production:**
+
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/api/v1/health
+
 ## 📦 Available Scripts
+
+### NPM Scripts
 
 ```bash
 # Development
@@ -73,48 +101,84 @@ pnpm format       # Format code with Prettier
 pnpm clean        # Clean all build artifacts
 ```
 
+### Docker Scripts
+
+```bash
+# Build Docker images
+./scripts/docker-build.sh
+
+# Start containers (dev mode with hot reload)
+./scripts/docker-up.sh dev
+
+# Start containers (production mode)
+./scripts/docker-up.sh prod
+
+# Stop containers
+./scripts/docker-down.sh [dev|prod]
+
+# View logs
+./scripts/docker-logs.sh [api|client] [dev|prod]
+
+# Clean Docker resources
+./scripts/docker-clean.sh
+
+# Setup local environment
+./scripts/setup-local.sh
+```
+
 ## 🏗️ Implementation Phases
 
-### ✅ Phase 0 — Skeleton (CURRENT)
+### ✅ Phase 0 — Skeleton (COMPLETE)
+
 - Monorepo setup with Turborepo + pnpm
 - Client (Vite + React) with health check UI
 - API (NestJS) with `/api/v1/health` endpoint
 - Shared types package for type safety
 - Local development with hot reload
 
-### 🔄 Phase 1 — Local Dev Experience
+### ✅ Phase 1 — Local Dev Experience (CURRENT)
+
 - Docker + docker-compose for services
+- Multi-stage Dockerfiles for optimized builds
+- Development and production compose files
 - Environment variable management
 - Setup scripts for quick start
 - Pre-commit hooks (Husky + lint-staged)
+- Docker helper scripts
 
 ### 🔄 Phase 2 — CI/CD Foundation
+
 - GitHub Actions workflows (lint, test, build)
 - Docker image builds
 - AWS ECR integration
 
 ### 🔄 Phase 3 — Kubernetes Local
+
 - Helm charts for all services
 - Local K8s deployment (Kind/Minikube)
 - Ingress configuration
 
 ### 🔄 Phase 4 — AWS Infrastructure
+
 - Terraform modules for EKS, VPC, networking
 - IAM roles and policies
 - ECR repositories
 
 ### 🔄 Phase 5 — GitOps
+
 - Argo CD setup
 - Automated sync from Git
 - Environment-specific deployments
 
 ### 🔄 Phase 6 — Observability
+
 - Structured logging (JSON)
 - Prometheus metrics
 - Grafana dashboards
 - Alerts
 
 ### 🔄 Phase 7 — Production Hardening
+
 - Security scanning (Trivy)
 - Network policies
 - Secrets management
@@ -140,21 +204,22 @@ Typed with @repo/shared
 
 ## 🔧 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vite, React 18, TypeScript |
-| Backend | NestJS, Express, TypeScript |
-| Monorepo | Turborepo, pnpm workspaces |
-| Testing | Jest, Vitest, Supertest |
-| Linting | ESLint, Prettier |
-| Infrastructure | Terraform, Helm, Kubernetes |
-| Cloud | AWS (EKS, ECR, VPC, ALB) |
-| CI/CD | GitHub Actions, Argo CD |
-| Observability | Prometheus, Grafana, CloudWatch |
+| Layer          | Technology                      |
+| -------------- | ------------------------------- |
+| Frontend       | Vite, React 18, TypeScript      |
+| Backend        | NestJS, Express, TypeScript     |
+| Monorepo       | Turborepo, pnpm workspaces      |
+| Testing        | Jest, Vitest, Supertest         |
+| Linting        | ESLint, Prettier                |
+| Infrastructure | Terraform, Helm, Kubernetes     |
+| Cloud          | AWS (EKS, ECR, VPC, ALB)        |
+| CI/CD          | GitHub Actions, Argo CD         |
+| Observability  | Prometheus, Grafana, CloudWatch |
 
 ## 🔐 Environment Variables
 
 ### Backend (`apps/api/.env`)
+
 ```bash
 PORT=3001
 NODE_ENV=development
@@ -163,6 +228,7 @@ APP_VERSION=0.1.0
 ```
 
 ### Frontend (`apps/client/.env`)
+
 ```bash
 VITE_API_BASE_URL=http://localhost:3001
 ```

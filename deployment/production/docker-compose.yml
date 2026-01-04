@@ -1,0 +1,61 @@
+name: launchpad-production
+
+services:
+  # Backend API
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/deployment/production/Dockerfile
+    image: launchpad/api:production
+    container_name: launchpad-production-api
+    ports:
+      - '3001:3001'
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - CORS_ORIGIN=http://localhost
+      - APP_VERSION=0.1.0
+    networks:
+      - launchpad-production
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/v1/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Frontend Client
+  client:
+    build:
+      context: ../..
+      dockerfile: apps/client/deployment/production/Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:3001
+    image: launchpad/client:production
+    container_name: launchpad-production-client
+    ports:
+      - '80:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - launchpad-production
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost/health']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  launchpad-production:
+    driver: bridge
+    name: launchpad-production

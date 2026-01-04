@@ -1,0 +1,53 @@
+name: launchpad-development
+
+services:
+  # Backend API - Development with hot reload
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/deployment/development/Dockerfile
+    image: launchpad/api:development
+    container_name: launchpad-development-api
+    ports:
+      - '3001:3001'
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - CORS_ORIGIN=http://localhost:5173
+      - APP_VERSION=0.1.0
+    volumes:
+      - ../../apps/api/src:/app/apps/api/src
+      - ../../packages/shared:/app/packages/shared
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    networks:
+      - launchpad-development
+    command: pnpm --filter @repo/api dev
+    restart: unless-stopped
+
+  # Frontend Client - Development with HMR
+  client:
+    build:
+      context: ../..
+      dockerfile: apps/client/deployment/development/Dockerfile
+    image: launchpad/client:development
+    container_name: launchpad-development-client
+    ports:
+      - '5173:5173'
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3001
+    volumes:
+      - ../../apps/client/src:/app/apps/client/src
+      - ../../apps/client/public:/app/apps/client/public
+      - ../../packages/shared:/app/packages/shared
+      - /app/node_modules
+      - /app/apps/client/node_modules
+    networks:
+      - launchpad-development
+    command: pnpm --filter @repo/client dev
+    restart: unless-stopped
+
+networks:
+  launchpad-development:
+    driver: bridge
+    name: launchpad-development
