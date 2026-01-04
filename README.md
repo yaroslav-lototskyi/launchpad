@@ -1,5 +1,9 @@
 # Launchpad 🚀
 
+[![PR Checks](https://github.com/OWNER/launchpad/actions/workflows/pr.yml/badge.svg)](https://github.com/OWNER/launchpad/actions/workflows/pr.yml)
+[![Main CI/CD](https://github.com/OWNER/launchpad/actions/workflows/main.yml/badge.svg)](https://github.com/OWNER/launchpad/actions/workflows/main.yml)
+[![Release](https://github.com/OWNER/launchpad/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/launchpad/actions/workflows/release.yml)
+
 Enterprise-grade monorepo template for modern cloud deployments with AWS, Kubernetes (EKS), and GitOps.
 
 ## 🎯 Overview
@@ -136,7 +140,7 @@ pnpm clean        # Clean all build artifacts
 - Shared types package for type safety
 - Local development with hot reload
 
-### ✅ Phase 1 — Local Dev Experience (CURRENT)
+### ✅ Phase 1 — Local Dev Experience (COMPLETE)
 
 - Docker + docker-compose for services
 - Multi-stage Dockerfiles for optimized builds
@@ -146,11 +150,13 @@ pnpm clean        # Clean all build artifacts
 - Pre-commit hooks (Husky + lint-staged)
 - Docker helper scripts
 
-### 🔄 Phase 2 — CI/CD Foundation
+### ✅ Phase 2 — CI/CD Foundation (COMPLETE)
 
-- GitHub Actions workflows (lint, test, build)
-- Docker image builds
-- AWS ECR integration
+- GitHub Actions workflows (PR checks, main branch CI/CD, releases)
+- Docker image builds and push to GHCR
+- Security scanning with Trivy
+- Automated changelog generation
+- Multi-tag strategy for releases
 
 ### 🔄 Phase 3 — Kubernetes Local
 
@@ -236,6 +242,8 @@ VITE_API_BASE_URL=http://localhost:3001
 ## 📚 Documentation
 
 - [Initial Plan](./docs/initial_plan.md) - Comprehensive implementation plan
+- [Phase 1 Complete](./docs/PHASE_1_COMPLETE.md) - Local Dev Experience summary
+- [Phase 2 Complete](./docs/PHASE_2_COMPLETE.md) - CI/CD Foundation summary
 - [Architecture](./docs/architecture.md) - System architecture (Phase 1+)
 - [Runbooks](./docs/runbooks/) - Production runbooks (Phase 6+)
 
@@ -261,5 +269,5 @@ ISC
 
 ---
 
-**Status**: Phase 0 Complete ✅
-**Next**: Phase 1 - Local Dev Experience
+**Status**: Phase 2 Complete ✅
+**Next**: Phase 3 - Kubernetes Local
