@@ -5,6 +5,8 @@ on:
     branches: [main]
     tags:
       - 'v*'
+  pull_request:
+    types: [labeled, synchronize]
   workflow_dispatch:
     inputs:
       environment:
@@ -24,6 +26,10 @@ jobs:
   build-and-push-api:
     name: Build and Push API
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy'))
     permissions:
       contents: read
       packages: write
@@ -51,7 +57,7 @@ jobs:
             ${{ env.REGISTRY_GHCR }}/${{ github.repository }}/api
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
+            type=ref,event=pr,prefix=pr-
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -73,6 +79,10 @@ jobs:
   build-and-push-client:
     name: Build and Push Client
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy'))
     permissions:
       contents: read
       packages: write
@@ -100,7 +110,7 @@ jobs:
             ${{ env.REGISTRY_GHCR }}/${{ github.repository }}/client
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
+            type=ref,event=pr,prefix=pr-
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}

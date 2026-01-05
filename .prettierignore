@@ -9,4 +9,4 @@ coverage
 pnpm-lock.yaml
 
 # Helm templates contain Go templating syntax
-infra/helm/**/templates/
+k8s/helm/**/templates/

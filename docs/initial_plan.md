@@ -31,26 +31,26 @@ Structure
 
 repo/
 ├── apps/
-│   ├── api/                    # NestJS backend
-│   └── client/                 # Vite + React frontend
+│ ├── api/ # NestJS backend
+│ └── client/ # Vite + React frontend
 ├── packages/
-│   └── shared/                 # shared types / contracts
-├── infra/
-│   ├── terraform/              # AWS / EKS infrastructure
-│   ├── helm/                   # Helm charts
-│   └── argocd/                 # Argo CD applications
+│ └── shared/ # shared types / contracts
+├── k8s/
+│ ├── terraform/ # AWS / EKS infrastructure
+│ ├── helm/ # Helm charts
+│ └── argocd/ # Argo CD applications
 ├── .github/
-│   └── workflows/              # CI/CD pipelines
-├── scripts/                    # Helper scripts
-│   ├── setup-local.sh
-│   ├── build-images.sh
-│   └── update-helm-tags.sh
-├── docs/                       # Documentation
-│   ├── initial_plan.md
-│   ├── architecture.md
-│   └── runbooks/
-├── .env.example                # Environment template
-├── docker-compose.yml          # Local development
+│ └── workflows/ # CI/CD pipelines
+├── scripts/ # Helper scripts
+│ ├── setup-local.sh
+│ ├── build-images.sh
+│ └── update-helm-tags.sh
+├── docs/ # Documentation
+│ ├── initial_plan.md
+│ ├── architecture.md
+│ └── runbooks/
+├── .env.example # Environment template
+├── docker-compose.yml # Local development
 ├── turbo.json
 ├── package.json
 └── pnpm-workspace.yaml
@@ -160,19 +160,19 @@ Requirements
 
 Structure
 
-infra/helm/
+k8s/helm/
 ├── charts/
-│   ├── api/
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   ├── values-dev.yaml
-│   │   ├── values-staging.yaml
-│   │   └── values-prod.yaml
-│   └── client/
-│       └── ...
-├── umbrella-chart/        # Parent chart for all services
-│   ├── Chart.yaml
-│   └── values.yaml
+│ ├── api/
+│ │ ├── Chart.yaml
+│ │ ├── values.yaml
+│ │ ├── values-dev.yaml
+│ │ ├── values-staging.yaml
+│ │ └── values-prod.yaml
+│ └── client/
+│ └── ...
+├── umbrella-chart/ # Parent chart for all services
+│ ├── Chart.yaml
+│ └── values.yaml
 └── README.md
 
 Best Practices
@@ -200,29 +200,29 @@ Sync Policy
 GitHub Actions Workflows
 
 1. PR Pipeline (.github/workflows/pr.yml)
-• Lint (ESLint, Prettier)
-• Type check (TypeScript)
-• Unit tests + coverage
-• Build verification
-• Security scan (Trivy)
+   • Lint (ESLint, Prettier)
+   • Type check (TypeScript)
+   • Unit tests + coverage
+   • Build verification
+   • Security scan (Trivy)
 
 2. Main Branch Pipeline (.github/workflows/main.yml)
-• All PR checks
-• Build & push Docker images to ECR
-• Tag images with git SHA + branch
-• Update Helm values (automated PR or commit)
+   • All PR checks
+   • Build & push Docker images to ECR
+   • Tag images with git SHA + branch
+   • Update Helm values (automated PR or commit)
 
 3. Release Pipeline (.github/workflows/release.yml)
-• Triggered on git tag (v*.*.*)
-• Build production images
-• Tag as :latest and :v1.2.3
-• Update prod Helm values
-• Create GitHub Release with changelog
+   • Triggered on git tag (v*.*.\*)
+   • Build production images
+   • Tag as :latest and :v1.2.3
+   • Update prod Helm values
+   • Create GitHub Release with changelog
 
 4. Terraform Pipeline (.github/workflows/terraform.yml)
-• Plan on PR
-• Apply on merge to main (with approval)
-• State in S3 + DynamoDB lock
+   • Plan on PR
+   • Apply on merge to main (with approval)
+   • State in S3 + DynamoDB lock
 
 Notes
 • CI does not deploy directly to cluster — Argo CD does (GitOps)
@@ -241,19 +241,19 @@ Minimal Scope
 
 Structure
 
-infra/terraform/
+k8s/terraform/
 ├── envs/
-│   ├── dev/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── terraform.tfvars
-│   └── prod/
-│       └── ...
+│ ├── dev/
+│ │ ├── main.tf
+│ │ ├── variables.tf
+│ │ └── terraform.tfvars
+│ └── prod/
+│ └── ...
 ├── modules/
-│   ├── network/
-│   ├── eks/
-│   └── ecr/
-└── backend.tf               # S3 + DynamoDB for state
+│ ├── network/
+│ ├── eks/
+│ └── ecr/
+└── backend.tf # S3 + DynamoDB for state
 
 ⸻
 
@@ -343,15 +343,18 @@ Requirements
 Quick Start
 
 # Setup
+
 pnpm install
 cp .env.example .env
 
 # Run locally (docker-compose)
+
 docker-compose up -d
 pnpm dev
 
 # Deploy to local K8s
-./scripts/deploy-local-k8s.sh
+
+./k8s/scripts/deploy-local-k8s.sh
 
 Hot Reload
 • Vite HMR for client
@@ -397,11 +400,12 @@ Required Docs
 • CONTRIBUTING.md: Development guidelines
 • docs/architecture.md: Diagrams (C4, sequence)
 • docs/runbooks/
-  - incident-response.md
-  - deployment.md
-  - rollback.md
-  - scaling.md
-• ADRs (Architecture Decision Records)
+
+- incident-response.md
+- deployment.md
+- rollback.md
+- scaling.md
+  • ADRs (Architecture Decision Records)
 
 ⸻
 

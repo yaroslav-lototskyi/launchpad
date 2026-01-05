@@ -122,7 +122,7 @@ git clone https://github.com/yaroslav-lototskyi/launchpad.git
 cd launchpad
 
 # Run Argo CD setup script
-./scripts/argocd-setup.sh
+./k8s/scripts/argocd-setup.sh
 
 # Install Image Updater when prompted: y
 ```
@@ -175,17 +175,17 @@ sudo nano /etc/hosts
 
 ```bash
 # Apply Argo CD Ingress
-kubectl apply -f infra/argocd/install/argocd-ingress.yaml
+kubectl apply -f k8s/argocd/install/argocd-ingress.yaml
 ```
 
 ## Step 7: Create Argo CD Project and Application
 
 ```bash
 # Apply Project
-kubectl apply -f infra/argocd/projects/development.yaml
+kubectl apply -f k8s/argocd/projects/development.yaml
 
 # Apply Application
-kubectl apply -f infra/argocd/apps/launchpad-development.yaml
+kubectl apply -f k8s/argocd/apps/launchpad-development.yaml
 ```
 
 ## Step 8: Access Argo CD UI

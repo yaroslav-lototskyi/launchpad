@@ -132,13 +132,13 @@ No changes to the user-facing commands:
 
 ```bash
 # Development mode (unchanged)
-./scripts/docker-up.sh dev
+./k8s/scripts/docker-up.sh dev
 
 # Production mode (unchanged)
-./scripts/docker-up.sh prod
+./k8s/scripts/docker-up.sh prod
 
 # Build images (unchanged)
-./scripts/docker-build.sh
+./k8s/scripts/docker-build.sh
 ```
 
 ## Future Additions

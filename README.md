@@ -31,7 +31,7 @@ launchpad/
 ├── deployment/                 # Environment-specific configs
 │   ├── development/            # Dev docker-compose
 │   └── production/             # Prod docker-compose
-├── infra/                      # Infrastructure as code (Phase 3+)
+├── k8s/                      # Infrastructure as code (Phase 3+)
 │   ├── terraform/              # AWS infrastructure
 │   ├── helm/                   # Kubernetes Helm charts
 │   └── argocd/                 # Argo CD applications
@@ -67,13 +67,13 @@ pnpm dev
 
 ```bash
 # Quick setup script
-./scripts/setup-local.sh
+./k8s/scripts/setup-local.sh
 
 # Start in development mode (with hot reload)
-./scripts/docker-up.sh dev
+./k8s/scripts/docker-up.sh dev
 
 # Or start in production mode
-./scripts/docker-up.sh prod
+./k8s/scripts/docker-up.sh prod
 ```
 
 ### Accessing the Application
@@ -109,25 +109,25 @@ pnpm clean        # Clean all build artifacts
 
 ```bash
 # Build Docker images
-./scripts/docker-build.sh
+./k8s/scripts/docker-build.sh
 
 # Start containers (dev mode with hot reload)
-./scripts/docker-up.sh dev
+./k8s/scripts/docker-up.sh dev
 
 # Start containers (production mode)
-./scripts/docker-up.sh prod
+./k8s/scripts/docker-up.sh prod
 
 # Stop containers
-./scripts/docker-down.sh [dev|prod]
+./k8s/scripts/docker-down.sh [dev|prod]
 
 # View logs
-./scripts/docker-logs.sh [api|client] [dev|prod]
+./k8s/scripts/docker-logs.sh [api|client] [dev|prod]
 
 # Clean Docker resources
-./scripts/docker-clean.sh
+./k8s/scripts/docker-clean.sh
 
 # Setup local environment
-./scripts/setup-local.sh
+./k8s/scripts/setup-local.sh
 ```
 
 ## 🏗️ Implementation Phases
@@ -248,7 +248,7 @@ VITE_API_BASE_URL=http://localhost:3001
 - [Phase 1 Complete](./docs/PHASE_1_COMPLETE.md) - Local Dev Experience summary
 - [Phase 2 Complete](./docs/PHASE_2_COMPLETE.md) - CI/CD Foundation summary
 - [Phase 3 Complete](./docs/PHASE_3_COMPLETE.md) - Kubernetes Local deployment
-- [Helm Chart README](./infra/helm/launchpad/README.md) - Helm chart documentation
+- [Helm Chart README](./k8s/helm/launchpad/README.md) - Helm chart documentation
 - [Architecture](./docs/architecture.md) - System architecture (Phase 1+)
 - [Runbooks](./docs/runbooks/) - Production runbooks (Phase 6+)
 

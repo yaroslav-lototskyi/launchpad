@@ -10,10 +10,10 @@ Phase 4 introduces AWS infrastructure automation using Terraform, enabling produ
 
 ### 1. Terraform Infrastructure as Code
 
-Created production-ready Terraform modules at `infra/terraform/`:
+Created production-ready Terraform modules at `k8s/terraform/`:
 
 ```
-infra/terraform/
+k8s/terraform/
 ├── main.tf                    # Main configuration with providers
 ├── variables.tf               # Global variables
 ├── outputs.tf                 # Infrastructure outputs
@@ -236,13 +236,13 @@ Main infrastructure deployment script:
 
 ```bash
 # Plan infrastructure
-./scripts/aws-setup.sh development plan
+./k8s/scripts/aws-setup.sh development plan
 
 # Apply infrastructure
-./scripts/aws-setup.sh development apply
+./k8s/scripts/aws-setup.sh development apply
 
 # Destroy infrastructure
-./scripts/aws-setup.sh development destroy
+./k8s/scripts/aws-setup.sh development destroy
 ```
 
 #### `scripts/aws-ecr-login.sh`
@@ -259,7 +259,7 @@ ECR authentication script:
 **Usage**:
 
 ```bash
-./scripts/aws-ecr-login.sh [region]
+./k8s/scripts/aws-ecr-login.sh [region]
 ```
 
 #### `scripts/aws-push-images.sh`
@@ -277,17 +277,17 @@ Build and push Docker images to ECR:
 **Usage**:
 
 ```bash
-./scripts/aws-push-images.sh [environment] [tag] [region]
+./k8s/scripts/aws-push-images.sh [environment] [tag] [region]
 
 # Examples
-./scripts/aws-push-images.sh development latest
-./scripts/aws-push-images.sh staging v1.0.0 us-east-1
-./scripts/aws-push-images.sh production v2.1.0
+./k8s/scripts/aws-push-images.sh development latest
+./k8s/scripts/aws-push-images.sh staging v1.0.0 us-east-1
+./k8s/scripts/aws-push-images.sh production v2.1.0
 ```
 
 ### 8. Documentation
 
-**Terraform README** (`infra/terraform/README.md`):
+**Terraform README** (`k8s/terraform/README.md`):
 
 - Architecture overview
 - Prerequisites and setup
@@ -349,10 +349,10 @@ Build and push Docker images to ECR:
 
 ```bash
 # Plan changes
-./scripts/aws-setup.sh development plan
+./k8s/scripts/aws-setup.sh development plan
 
 # Review plan and apply
-./scripts/aws-setup.sh development apply
+./k8s/scripts/aws-setup.sh development apply
 ```
 
 ### 2. Configure kubectl
@@ -366,7 +366,7 @@ kubectl get nodes
 
 ```bash
 # Build and push to ECR
-./scripts/aws-push-images.sh development latest
+./k8s/scripts/aws-push-images.sh development latest
 
 # Verify images
 aws ecr list-images --repository-name launchpad/api
@@ -377,7 +377,7 @@ aws ecr list-images --repository-name launchpad/api
 ```bash
 # Update Helm values to use ECR
 # Then deploy
-./scripts/k8s-deploy.sh development
+./k8s/scripts/k8s-deploy.sh development
 ```
 
 ### 5. Verify Deployment
@@ -497,7 +497,7 @@ kubectl get nodes
 ### ECR Push Denied
 
 ```bash
-./scripts/aws-ecr-login.sh us-east-1
+./k8s/scripts/aws-ecr-login.sh us-east-1
 ```
 
 ### Terraform State Locked

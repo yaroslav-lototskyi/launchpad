@@ -171,36 +171,36 @@ launchpad/
 
 ```bash
 # Start development environment
-./scripts/docker-up.sh dev
+./k8s/scripts/docker-up.sh dev
 
 # View API logs
-./scripts/docker-logs.sh api dev
+./k8s/scripts/docker-logs.sh api dev
 
 # View Client logs
-./scripts/docker-logs.sh client dev
+./k8s/scripts/docker-logs.sh client dev
 
 # Stop development environment
-./scripts/docker-down.sh dev
+./k8s/scripts/docker-down.sh dev
 ```
 
 ### Production Mode
 
 ```bash
 # Build images
-./scripts/docker-build.sh
+./k8s/scripts/docker-build.sh
 
 # Start production environment
-./scripts/docker-up.sh prod
+./k8s/scripts/docker-up.sh prod
 
 # Stop production environment
-./scripts/docker-down.sh prod
+./k8s/scripts/docker-down.sh prod
 ```
 
 ### Cleanup
 
 ```bash
 # Remove all Docker resources
-./scripts/docker-clean.sh
+./k8s/scripts/docker-clean.sh
 ```
 
 ## Key Features

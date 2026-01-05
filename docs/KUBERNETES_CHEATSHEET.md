@@ -283,18 +283,18 @@ helm list -A  # short version
 
 # Install chart
 helm install <release-name> <chart-path> -n <namespace>
-helm install launchpad ./infra/helm/launchpad -n launchpad-development
+helm install launchpad ./k8s/helm/launchpad -n launchpad-development
 
 # Install with custom values
-helm install launchpad ./infra/helm/launchpad -n launchpad-development \
-  --values ./infra/helm/launchpad/values-development.yaml \
+helm install launchpad ./k8s/helm/launchpad -n launchpad-development \
+  --values ./k8s/helm/launchpad/values-development.yaml \
   --set api.image.tag=v2.0
 
 # Upgrade release
-helm upgrade launchpad ./infra/helm/launchpad -n launchpad-development
+helm upgrade launchpad ./k8s/helm/launchpad -n launchpad-development
 
 # Install or upgrade (if exists)
-helm upgrade --install launchpad ./infra/helm/launchpad -n launchpad-development
+helm upgrade --install launchpad ./k8s/helm/launchpad -n launchpad-development
 
 # Uninstall release
 helm uninstall launchpad -n launchpad-development
@@ -313,10 +313,10 @@ helm rollback launchpad -n launchpad-development
 helm rollback launchpad 1 -n launchpad-development  # to specific version
 
 # Dry run (preview what will be created WITHOUT actual deploy)
-helm install launchpad ./infra/helm/launchpad -n launchpad-development --dry-run --debug
+helm install launchpad ./k8s/helm/launchpad -n launchpad-development --dry-run --debug
 
 # Template rendering (show generated YAML)
-helm template launchpad ./infra/helm/launchpad
+helm template launchpad ./k8s/helm/launchpad
 ```
 
 ---
@@ -399,7 +399,7 @@ kx <pod-name> -n launchpad-development -- sh
 ```bash
 # Apply (create or update)
 kubectl apply -f deployment.yaml
-kubectl apply -f ./infra/k8s/  # entire directory
+kubectl apply -f ./k8s/k8s/  # entire directory
 
 # Create (only create, error if exists)
 kubectl create -f deployment.yaml

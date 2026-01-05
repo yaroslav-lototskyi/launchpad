@@ -64,7 +64,7 @@ Code Change → Git Commit → Argo CD Watches → Auto-Sync → Kubernetes
 ## Directory Structure
 
 ```
-infra/argocd/
+k8s/argocd/
 ├── install/
 │   ├── argocd-install.yaml         # Installation instructions
 │   ├── argocd-ingress.yaml        # Ingress configuration
@@ -85,7 +85,7 @@ infra/argocd/
 
 ```bash
 # Automated installation
-./scripts/argocd-setup.sh
+./k8s/scripts/argocd-setup.sh
 
 # Or manual installation
 kubectl create namespace argocd
@@ -112,7 +112,7 @@ open https://localhost:8080
 
 ```bash
 # Update domain in argocd-ingress.yaml
-kubectl apply -f infra/argocd/install/argocd-ingress.yaml
+kubectl apply -f k8s/argocd/install/argocd-ingress.yaml
 
 # Access via domain
 open https://argocd.launchpad.io
@@ -142,7 +142,7 @@ Projects provide multi-tenancy and RBAC:
 
 ```bash
 # Apply all projects
-kubectl apply -f infra/argocd/projects/
+kubectl apply -f k8s/argocd/projects/
 ```
 
 **Project Features**:
@@ -157,9 +157,9 @@ Applications define what to deploy and where:
 
 ```bash
 # Apply applications
-kubectl apply -f infra/argocd/apps/launchpad-development.yaml
-kubectl apply -f infra/argocd/apps/launchpad-staging.yaml
-kubectl apply -f infra/argocd/apps/launchpad-production.yaml
+kubectl apply -f k8s/argocd/apps/launchpad-development.yaml
+kubectl apply -f k8s/argocd/apps/launchpad-staging.yaml
+kubectl apply -f k8s/argocd/apps/launchpad-production.yaml
 ```
 
 ## Sync Policies
@@ -599,7 +599,7 @@ metadata:
   name: root
 spec:
   source:
-    path: infra/argocd/apps
+    path: k8s/argocd/apps
   # This app deploys other apps
 ```
 

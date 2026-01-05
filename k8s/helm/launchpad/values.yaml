@@ -1,0 +1,172 @@
+# Default values for launchpad
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  environment: development
+  domain: '' # Must be set via Helm values override or Argo CD parameters
+
+# Image defaults - can be overridden via Argo CD or command line
+# These are used when api.image.repository or client.image.repository are empty
+imageDefaults:
+  registry: ghcr.io
+  organization: '' # Will be extracted from GitHub in CI/CD
+  repository: '' # Will be extracted from GitHub in CI/CD
+
+# API service configuration
+api:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    # Registry and repository can be overridden
+    # Default format: ghcr.io/<github-username>/<repo-name>/api
+    repository: '' # Will be set dynamically or use _helpers.tpl default
+    pullPolicy: IfNotPresent
+    tag: 'latest'
+
+  service:
+    type: ClusterIP
+    port: 3001
+    targetPort: 3001
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+  env:
+    - name: PORT
+      value: '3001'
+    - name: NODE_ENV
+      value: 'production'
+    - name: CORS_ORIGIN
+      value: '' # Will be set to http://{{ .Values.global.domain }} in template
+
+  livenessProbe:
+    httpGet:
+      path: /api/v1/health
+      port: 3001
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /api/v1/health
+      port: 3001
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Client service configuration
+client:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    # Registry and repository can be overridden
+    # Default format: ghcr.io/<github-username>/<repo-name>/client
+    repository: '' # Will be set dynamically or use _helpers.tpl default
+    pullPolicy: IfNotPresent
+    tag: 'latest'
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: 'nginx'
+  annotations:
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+  # Host will use global.domain if not overridden
+  hosts:
+    - host: null # Will be set from global.domain in template
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: launchpad-api
+              port: 3001
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: launchpad-client
+              port: 80
+  tls:
+    - secretName: launchpad-tls
+      # hosts will use global.domain from template
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: 'launchpad'
+
+# Pod Security
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,82 @@
+# Argo CD Application for Development Environment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: launchpad-development
+  namespace: argocd
+  # Finalizer to ensure proper cleanup
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Image Updater annotations - automatically update images
+    # Note: Update these with your actual GHCR organization/repository
+    argocd-image-updater.argoproj.io/image-list: |
+      api=ghcr.io/{{GITHUB_ORG}}/{{GITHUB_REPO}}/api:latest,
+      client=ghcr.io/{{GITHUB_ORG}}/{{GITHUB_REPO}}/client:latest
+    argocd-image-updater.argoproj.io/api.update-strategy: latest
+    argocd-image-updater.argoproj.io/client.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+spec:
+  # Project this application belongs to
+  project: launchpad-development
+
+  # Source - where the manifests are
+  source:
+    repoURL: https://github.com/{{GITHUB_ORG}}/{{GITHUB_REPO}}
+    targetRevision: main # Branch to track
+    path: k8s/helm/launchpad # Path to Helm chart
+
+    # Helm specific configuration
+    helm:
+      # Values file to use
+      valueFiles:
+        - values-development.yaml
+
+      # Additional parameters
+      parameters:
+        - name: imageDefaults.organization
+          value: '{{GITHUB_ORG}}'
+        - name: imageDefaults.repository
+          value: '{{GITHUB_REPO}}'
+        - name: api.image.tag
+          value: latest # Will be updated by Image Updater
+        - name: client.image.tag
+          value: latest
+
+  # Destination - where to deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: launchpad-development
+
+  # Sync policy - AUTOMATIC for development
+  syncPolicy:
+    automated:
+      prune: true # Delete resources that are no longer in Git
+      selfHeal: true # Auto-sync when cluster state differs from Git
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=true # Auto-create namespace
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Health assessment
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas # Ignore replica count (HPA manages this)
+
+  # Notification annotations
+  info:
+    - name: 'Environment'
+      value: 'Development'
+    - name: 'Auto-sync'
+      value: 'Enabled'

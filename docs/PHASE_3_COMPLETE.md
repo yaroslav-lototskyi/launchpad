@@ -10,10 +10,10 @@ Phase 3 introduces Kubernetes deployment capabilities with Helm charts, enabling
 
 ### 1. Helm Chart Structure
 
-Created production-ready Helm chart at `infra/helm/launchpad/`:
+Created production-ready Helm chart at `k8s/helm/launchpad/`:
 
 ```
-infra/helm/launchpad/
+k8s/helm/launchpad/
 ├── Chart.yaml                    # Helm chart metadata
 ├── .helmignore                   # Files to exclude from package
 ├── README.md                     # Chart documentation
@@ -112,7 +112,7 @@ Creates local Kubernetes cluster using Kind:
 **Usage**:
 
 ```bash
-./scripts/k8s-setup-kind.sh
+./k8s/scripts/k8s-setup-kind.sh
 ```
 
 #### `scripts/k8s-deploy.sh`
@@ -128,11 +128,11 @@ Deploys Helm chart to Kubernetes:
 **Usage**:
 
 ```bash
-./scripts/k8s-deploy.sh [environment] [namespace]
+./k8s/scripts/k8s-deploy.sh [environment] [namespace]
 # Examples:
-./scripts/k8s-deploy.sh development
-./scripts/k8s-deploy.sh staging launchpad-staging
-./scripts/k8s-deploy.sh production launchpad-prod
+./k8s/scripts/k8s-deploy.sh development
+./k8s/scripts/k8s-deploy.sh staging launchpad-staging
+./k8s/scripts/k8s-deploy.sh production launchpad-prod
 ```
 
 #### `scripts/k8s-destroy.sh`
@@ -146,12 +146,12 @@ Cleans up Kubernetes deployment:
 **Usage**:
 
 ```bash
-./scripts/k8s-destroy.sh [environment] [namespace]
+./k8s/scripts/k8s-destroy.sh [environment] [namespace]
 ```
 
 ### 5. Documentation
 
-- **Helm Chart README** (`infra/helm/launchpad/README.md`):
+- **Helm Chart README** (`k8s/helm/launchpad/README.md`):
   - Installation instructions
   - Configuration parameters reference
   - Usage examples
@@ -203,14 +203,14 @@ Cleans up Kubernetes deployment:
 brew install kind
 
 # Create local cluster
-./scripts/k8s-setup-kind.sh
+./k8s/scripts/k8s-setup-kind.sh
 ```
 
 ### Deploy Application
 
 ```bash
 # Deploy to development environment
-./scripts/k8s-deploy.sh development
+./k8s/scripts/k8s-deploy.sh development
 
 # Access the application
 open http://launchpad.local
@@ -236,7 +236,7 @@ kubectl logs -n launchpad-development -l app.kubernetes.io/component=api --tail=
 
 ```bash
 # Remove deployment
-./scripts/k8s-destroy.sh development
+./k8s/scripts/k8s-destroy.sh development
 
 # Delete Kind cluster
 kind delete cluster --name launchpad-local
@@ -362,7 +362,7 @@ With local Kubernetes deployment working, Phase 4 will focus on AWS infrastructu
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Kind Documentation](https://kind.sigs.k8s.io/)
 - [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx/)
-- [Helm Chart README](../infra/helm/launchpad/README.md)
+- [Helm Chart README](../k8s/helm/launchpad/README.md)
 
 ---
 

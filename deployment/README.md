@@ -24,7 +24,7 @@ The development environment includes:
 **Start development environment:**
 
 ```bash
-./scripts/docker-up.sh dev
+docker-compose -f deployment/development/docker-compose.yml up
 ```
 
 ## Production
@@ -40,7 +40,7 @@ The production environment includes:
 **Start production environment:**
 
 ```bash
-./scripts/docker-up.sh prod
+docker-compose -f deployment/production/docker-compose.yml up
 ```
 
 ## Service-Specific Dockerfiles

@@ -9,6 +9,7 @@
 Phase 0 successfully created a fully functional monorepo skeleton with:
 
 ### 1. Monorepo Infrastructure
+
 - ✅ Turborepo configuration
 - ✅ pnpm workspace setup
 - ✅ Shared build/lint/test scripts
@@ -16,6 +17,7 @@ Phase 0 successfully created a fully functional monorepo skeleton with:
 - ✅ Git hooks with Husky
 
 ### 2. Backend API (NestJS)
+
 - ✅ NestJS minimal setup
 - ✅ Health endpoint: `GET /api/v1/health`
 - ✅ CORS enabled
@@ -24,6 +26,7 @@ Phase 0 successfully created a fully functional monorepo skeleton with:
 - ✅ Uses shared types from `@repo/shared`
 
 **API Response Example**:
+
 ```json
 {
   "ok": true,
@@ -35,6 +38,7 @@ Phase 0 successfully created a fully functional monorepo skeleton with:
 ```
 
 ### 3. Frontend Client (Vite + React)
+
 - ✅ Vite + React 18 + TypeScript
 - ✅ Health check UI displaying API status
 - ✅ Typed API calls using `@repo/shared`
@@ -43,12 +47,14 @@ Phase 0 successfully created a fully functional monorepo skeleton with:
 - ✅ Clean, modern UI
 
 ### 4. Shared Types Package
+
 - ✅ `@repo/shared` TypeScript-only package
 - ✅ `HealthResponse` type contract
 - ✅ Shared between frontend and backend
 - ✅ Type-safe API communication
 
 ### 5. Developer Experience
+
 - ✅ One-command development: `pnpm dev`
 - ✅ Helper scripts:
   - `scripts/setup-local.sh` - Quick project setup
@@ -58,6 +64,7 @@ Phase 0 successfully created a fully functional monorepo skeleton with:
 - ✅ Environment variable templates (`.env.example`)
 
 ### 6. Documentation
+
 - ✅ Comprehensive README.md
 - ✅ CONTRIBUTING.md guide
 - ✅ Enhanced initial_plan.md with all phases
@@ -117,6 +124,7 @@ launchpad/
 ## Verified Functionality
 
 All checks passing:
+
 - ✅ `pnpm install` - Dependencies install successfully
 - ✅ `pnpm type-check` - TypeScript compiles without errors
 - ✅ `pnpm build` - All packages build successfully
@@ -126,20 +134,23 @@ All checks passing:
 ## How to Use
 
 ### Quick Start
+
 ```bash
 # Setup project
-./scripts/setup-local.sh
+./k8s/scripts/setup-local.sh
 
 # Start development (both client and API)
 pnpm dev
 ```
 
 ### Access Points
+
 - **Frontend**: http://localhost:5173
 - **Backend**: http://localhost:3001
 - **Health Check**: http://localhost:3001/api/v1/health
 
 ### Available Commands
+
 ```bash
 pnpm dev          # Start all apps in dev mode
 pnpm build        # Build all packages
@@ -152,20 +163,21 @@ pnpm clean        # Clean all build artifacts
 
 ## Key Technologies
 
-| Component | Technology |
-|-----------|-----------|
-| Monorepo | Turborepo 1.13.4 |
-| Package Manager | pnpm 8.15.1 |
-| Frontend | Vite 5.0.11 + React 18.2 |
-| Backend | NestJS 10.3.0 |
-| Language | TypeScript 5.3.3 |
-| Linting | ESLint 8.56.0 |
-| Formatting | Prettier 3.2.4 |
-| Git Hooks | Husky 8.0.3 |
+| Component       | Technology               |
+| --------------- | ------------------------ |
+| Monorepo        | Turborepo 1.13.4         |
+| Package Manager | pnpm 8.15.1              |
+| Frontend        | Vite 5.0.11 + React 18.2 |
+| Backend         | NestJS 10.3.0            |
+| Language        | TypeScript 5.3.3         |
+| Linting         | ESLint 8.56.0            |
+| Formatting      | Prettier 3.2.4           |
+| Git Hooks       | Husky 8.0.3              |
 
 ## Next Steps - Phase 1: Local Dev Experience
 
 The next phase will add:
+
 1. Docker + docker-compose for containerization
 2. Full environment variable management
 3. Pre-commit hooks automation (lint-staged)

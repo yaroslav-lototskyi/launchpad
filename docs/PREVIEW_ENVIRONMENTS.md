@@ -110,7 +110,7 @@ jobs:
             source:
               repoURL: https://github.com/${{ github.repository }}
               targetRevision: ${{ github.head_ref }}
-              path: infra/helm/launchpad
+              path: k8s/helm/launchpad
               helm:
                 valueFiles:
                   - values-development.yaml
@@ -258,7 +258,7 @@ spec:
   source:
     repoURL: https://github.com/yaroslav-lototskyi/launchpad
     targetRevision: HEAD
-    path: infra/helm/launchpad
+    path: k8s/helm/launchpad
     helm:
       valueFiles:
         - values-development.yaml
@@ -290,7 +290,7 @@ EOF
    - **Project**: `launchpad-development`
    - **Sync Policy**: Automatic
    - **Repository URL**: `https://github.com/yaroslav-lototskyi/launchpad`
-   - **Path**: `infra/helm/launchpad`
+   - **Path**: `k8s/helm/launchpad`
    - **Cluster**: `in-cluster`
    - **Namespace**: `launchpad-pr-123`
    - **Helm Parameters**:
@@ -309,7 +309,7 @@ PR_NUMBER=123
 argocd app create launchpad-pr-${PR_NUMBER} \
   --project launchpad-development \
   --repo https://github.com/yaroslav-lototskyi/launchpad \
-  --path infra/helm/launchpad \
+  --path k8s/helm/launchpad \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace launchpad-pr-${PR_NUMBER} \
   --helm-set api.image.tag=pr-${PR_NUMBER} \

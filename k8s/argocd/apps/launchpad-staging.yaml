@@ -1,0 +1,75 @@
+# Argo CD Application for Staging Environment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: launchpad-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Notifications
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: launchpad-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: launchpad-alerts
+
+    # Image Updater - automatically update when new images are pushed
+    argocd-image-updater.argoproj.io/image-list: |
+      api=ghcr.io/YOUR_ORG/launchpad/api:~staging,
+      client=ghcr.io/YOUR_ORG/launchpad/client:~staging
+    argocd-image-updater.argoproj.io/api.update-strategy: latest
+    argocd-image-updater.argoproj.io/client.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: develop
+spec:
+  project: launchpad-staging
+
+  source:
+    repoURL: https://github.com/YOUR_ORG/launchpad
+    targetRevision: develop # Staging tracks develop branch
+    path: k8s/helm/launchpad
+
+    helm:
+      valueFiles:
+        - values-staging.yaml
+
+      parameters:
+        - name: api.image.tag
+          value: staging
+        - name: client.image.tag
+          value: staging
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: launchpad-staging
+
+  # Sync policy - AUTOMATIC for staging (auto-deploy from develop)
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  info:
+    - name: 'Environment'
+      value: 'Staging'
+    - name: 'Auto-sync'
+      value: 'Enabled'
+    - name: 'Branch'
+      value: 'develop'

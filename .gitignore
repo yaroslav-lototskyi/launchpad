@@ -51,3 +51,8 @@ lerna-debug.log*
 
 # K8s secrets
 *-secrets.yaml
+
+# Generated Argo CD configurations
+k8s/argocd/apps/*.configured.yaml
+k8s/argocd/applicationsets/*.configured.yaml
+k8s/argocd/install/argocd-ingress.yaml

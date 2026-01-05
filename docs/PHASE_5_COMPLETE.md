@@ -607,17 +607,17 @@ jobs: 1
 
 **Components**:
 
-1. **Argo CD Installation** (`infra/argocd/install/`):
+1. **Argo CD Installation** (`k8s/argocd/install/`):
    - Installation manifests
    - Ingress configuration
    - Image Updater setup
 
-2. **Argo CD Projects** (`infra/argocd/projects/`):
+2. **Argo CD Projects** (`k8s/argocd/projects/`):
    - Development project (full access)
    - Staging project (controlled access)
    - Production project (restricted, sync windows)
 
-3. **Argo CD Applications** (`infra/argocd/apps/`):
+3. **Argo CD Applications** (`k8s/argocd/apps/`):
    - Development: Auto-sync enabled, tracks `develop` branch
    - Staging: Auto-sync enabled, tracks `develop` branch
    - Production: Manual sync, tracks `main` branch
@@ -667,7 +667,7 @@ jobs: 1
 **Setup Script**:
 
 ```bash
-./scripts/argocd-setup.sh
+./k8s/scripts/argocd-setup.sh
 ```
 
 ## CI/CD vs GitOps
