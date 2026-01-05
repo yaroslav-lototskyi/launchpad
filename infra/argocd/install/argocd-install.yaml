@@ -1,0 +1,28 @@
+# Argo CD Installation
+# This file contains the resources needed to install Argo CD in the cluster
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+
+---
+# Install Argo CD using the official manifests
+# kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Or use this ConfigMap to track the version
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-installation-info
+  namespace: argocd
+data:
+  version: 'v2.9.3'
+  install-command: |
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/install.yaml
+
+  # For HA installation (production)
+  install-ha-command: |
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/ha/install.yaml

@@ -1,0 +1,72 @@
+# Argo CD Project for Production Environment
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: launchpad-production
+  namespace: argocd
+spec:
+  description: Launchpad Production Environment
+
+  sourceRepos:
+    - 'https://github.com/*/launchpad' # Only specific repo for production
+    - 'https://github.com/*/launchpad.git'
+
+  destinations:
+    - namespace: launchpad-production
+      server: https://kubernetes.default.svc
+
+  # Very restrictive for production
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+
+  namespaceResourceWhitelist:
+    - group: 'apps'
+      kind: Deployment
+    - group: 'apps'
+      kind: StatefulSet
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'autoscaling'
+      kind: HorizontalPodAutoscaler
+    - group: 'policy'
+      kind: PodDisruptionBudget
+
+  # Sync windows - only allow deployments during maintenance windows
+  syncWindows:
+    - kind: allow
+      schedule: '0 2-4 * * *' # Allow sync 2-4 AM UTC
+      duration: 2h
+      applications:
+        - '*'
+      manualSync: true # Allow manual sync anytime
+
+  roles:
+    - name: admin
+      description: Full production access
+      policies:
+        - p, proj:launchpad-production:admin, applications, *, launchpad-production/*, allow
+      groups:
+        - production-admins
+
+    - name: deployer
+      description: Can deploy with approval
+      policies:
+        - p, proj:launchpad-production:deployer, applications, sync, launchpad-production/*, allow
+        - p, proj:launchpad-production:deployer, applications, get, launchpad-production/*, allow
+      groups:
+        - production-deployers
+
+    - name: readonly
+      description: Read-only access
+      policies:
+        - p, proj:launchpad-production:readonly, applications, get, launchpad-production/*, allow
+      groups:
+        - viewers
+        - developers

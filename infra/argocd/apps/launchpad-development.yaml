@@ -1,0 +1,79 @@
+# Argo CD Application for Development Environment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: launchpad-development
+  namespace: argocd
+  # Finalizer to ensure proper cleanup
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Image Updater annotations - automatically update images
+    argocd-image-updater.argoproj.io/image-list: |
+      api=ghcr.io/YOUR_ORG/launchpad/api:develop,
+      client=ghcr.io/YOUR_ORG/launchpad/client:develop
+    argocd-image-updater.argoproj.io/api.update-strategy: latest
+    argocd-image-updater.argoproj.io/client.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: develop
+spec:
+  # Project this application belongs to
+  project: launchpad-development
+
+  # Source - where the manifests are
+  source:
+    # Replace with your Git repository
+    repoURL: https://github.com/YOUR_ORG/launchpad
+    targetRevision: develop # Branch to track
+    path: infra/helm/launchpad # Path to Helm chart
+
+    # Helm specific configuration
+    helm:
+      # Values file to use
+      valueFiles:
+        - values-development.yaml
+
+      # Additional parameters
+      parameters:
+        - name: api.image.tag
+          value: develop # Will be updated by Image Updater
+        - name: client.image.tag
+          value: develop
+
+  # Destination - where to deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: launchpad-development
+
+  # Sync policy - AUTOMATIC for development
+  syncPolicy:
+    automated:
+      prune: true # Delete resources that are no longer in Git
+      selfHeal: true # Auto-sync when cluster state differs from Git
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=true # Auto-create namespace
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Health assessment
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas # Ignore replica count (HPA manages this)
+
+  # Notification annotations
+  info:
+    - name: 'Environment'
+      value: 'Development'
+    - name: 'Auto-sync'
+      value: 'Enabled'

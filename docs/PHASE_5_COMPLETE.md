@@ -1,10 +1,10 @@
-# Phase 5 Complete: CI/CD Pipeline ✅
+# Phase 5 Complete: CI/CD Pipeline & GitOps ✅
 
 **Completion Date**: 2026-01-05
 
 ## Overview
 
-Phase 5 introduces automated CI/CD pipelines using GitHub Actions, enabling continuous integration, automated testing, Docker image building, and deployment to Kubernetes clusters.
+Phase 5 introduces automated CI/CD pipelines using GitHub Actions for Continuous Integration and Argo CD for GitOps-based Continuous Deployment. This hybrid approach combines the best of both worlds: GitHub Actions for building and testing, and Argo CD for declarative, Git-driven deployments.
 
 ## Deliverables
 
@@ -601,6 +601,116 @@ jobs: 1
 - **Average Deploy Time**: 5-10 minutes
 - **Security Scans**: 2 (Trivy + CodeQL)
 
+### 6. Argo CD GitOps Configuration
+
+**Purpose**: Declarative, Git-driven continuous deployment
+
+**Components**:
+
+1. **Argo CD Installation** (`infra/argocd/install/`):
+   - Installation manifests
+   - Ingress configuration
+   - Image Updater setup
+
+2. **Argo CD Projects** (`infra/argocd/projects/`):
+   - Development project (full access)
+   - Staging project (controlled access)
+   - Production project (restricted, sync windows)
+
+3. **Argo CD Applications** (`infra/argocd/apps/`):
+   - Development: Auto-sync enabled, tracks `develop` branch
+   - Staging: Auto-sync enabled, tracks `develop` branch
+   - Production: Manual sync, tracks `main` branch
+
+4. **Image Updater**:
+   - Automatically detects new images
+   - Updates Helm values in Git
+   - Triggers Argo CD sync
+
+**Sync Policies**:
+
+| Environment | Sync Policy           | Image Strategy      | Approval |
+| ----------- | --------------------- | ------------------- | -------- |
+| Development | Automatic (self-heal) | `latest` tag        | None     |
+| Staging     | Automatic (self-heal) | `staging` tag       | None     |
+| Production  | Manual                | Semantic versioning | Required |
+
+**GitOps Workflow**:
+
+```
+1. Developer pushes code
+   ↓
+2. GitHub Actions builds Docker image
+   ↓
+3. Image pushed to registry (GHCR/ECR)
+   ↓
+4. Image Updater detects new image
+   ↓
+5. Updates Helm values in Git (creates commit)
+   ↓
+6. Argo CD detects Git change
+   ↓
+7. Auto-syncs (dev/staging) or waits for approval (prod)
+   ↓
+8. Deploys to Kubernetes
+```
+
+**Benefits**:
+
+- ✅ Git as single source of truth
+- ✅ Automatic drift detection
+- ✅ Easy rollback (git revert)
+- ✅ Audit trail in Git history
+- ✅ Declarative configuration
+- ✅ Visual deployment UI
+
+**Setup Script**:
+
+```bash
+./scripts/argocd-setup.sh
+```
+
+## CI/CD vs GitOps
+
+### Separation of Concerns
+
+**GitHub Actions (CI)**:
+
+- Build code
+- Run tests
+- Build Docker images
+- Push to registry
+- Security scanning
+
+**Argo CD (CD)**:
+
+- Monitor Git repository
+- Sync Kubernetes state
+- Deploy applications
+- Detect drift
+- Auto-remediate
+
+### Workflow Comparison
+
+**Before (GitHub Actions only)**:
+
+```
+Git Push → Build → Test → Deploy → Kubernetes
+           (All in GitHub Actions)
+```
+
+**After (GitHub Actions + Argo CD)**:
+
+```
+Git Push → Build → Test → Push Image
+           (GitHub Actions)
+                    ↓
+           Image Updater → Update Git
+                    ↓
+           Argo CD → Deploy → Kubernetes
+           (GitOps)
+```
+
 ## Documentation
 
 - **GitHub Actions Setup** (`docs/GITHUB_ACTIONS_SETUP.md`):
@@ -609,6 +719,15 @@ jobs: 1
   - Workflow descriptions
   - Troubleshooting guide
   - Best practices
+
+- **Argo CD GitOps** (`docs/ARGOCD_GITOPS.md`):
+  - GitOps principles
+  - Argo CD installation
+  - Application configuration
+  - Sync policies
+  - Image update automation
+  - Common operations
+  - Troubleshooting
 
 - **Phase 5 Complete** (this file):
   - Overview and deliverables
@@ -643,13 +762,25 @@ With CI/CD pipeline complete, Phase 6 will focus on observability:
 
 ## References
 
+### GitHub Actions
+
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Docker Build Push Action](https://github.com/docker/build-push-action)
 - [AWS OIDC Guide](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
+
+### Argo CD
+
+- [Argo CD Documentation](https://argo-cd.readthedocs.io/)
+- [GitOps Principles](https://www.gitops.tech/)
+- [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/)
+- [Argo CD Best Practices](https://argo-cd.readthedocs.io/en/stable/user-guide/best_practices/)
+
+### General
+
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [Semantic Versioning](https://semver.org/)
 
 ---
 
-**Phase 5 Status**: ✅ Complete
+**Phase 5 Status**: ✅ Complete (CI/CD + GitOps)
 **Next Phase**: Phase 6 - Monitoring and Observability

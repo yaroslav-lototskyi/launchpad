@@ -1,0 +1,82 @@
+# Argo CD Application for Production Environment
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: launchpad-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Critical notifications for production
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: launchpad-production
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: launchpad-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: launchpad-alerts
+
+    # Image Updater - only semver tags for production
+    argocd-image-updater.argoproj.io/image-list: |
+      api=ghcr.io/YOUR_ORG/launchpad/api:~v,
+      client=ghcr.io/YOUR_ORG/launchpad/client:~v
+    argocd-image-updater.argoproj.io/api.update-strategy: semver
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/client.update-strategy: semver
+    argocd-image-updater.argoproj.io/client.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+spec:
+  project: launchpad-production
+
+  source:
+    repoURL: https://github.com/YOUR_ORG/launchpad
+    targetRevision: main # Production tracks main branch
+    path: infra/helm/launchpad
+
+    helm:
+      valueFiles:
+        - values-production.yaml
+
+      parameters:
+        - name: api.image.tag
+          value: production
+        - name: client.image.tag
+          value: production
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: launchpad-production
+
+  # Sync policy - MANUAL for production (require approval)
+  syncPolicy:
+    # NO automated sync for production
+    # automated:
+    #   prune: false
+    #   selfHeal: false
+
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true # Only apply resources that are out of sync
+
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  # More strict health checks for production
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas # HPA manages replicas
+
+  info:
+    - name: 'Environment'
+      value: 'Production'
+    - name: 'Auto-sync'
+      value: 'Disabled (Manual approval required)'
+    - name: 'Branch'
+      value: 'main'
+    - name: 'Approval'
+      value: 'Required before sync'
