@@ -20,10 +20,11 @@ Complete guide for running Launchpad locally with Kind (Kubernetes in Docker) an
 4. [Install Argo CD](#4-install-argo-cd)
 5. [Setup GitHub Container Registry Access](#5-setup-github-container-registry-access)
 6. [Deploy Application](#6-deploy-application)
-7. [Test Preview Environments](#7-test-preview-environments)
-8. [Development Workflow](#8-development-workflow)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Cleanup](#10-cleanup)
+7. [Setup Preview Environments (ApplicationSet)](#7-setup-preview-environments-applicationset)
+8. [Test Preview Environments](#8-test-preview-environments)
+9. [Development Workflow](#9-development-workflow)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Cleanup](#11-cleanup)
 
 ---
 
@@ -419,49 +420,101 @@ http://launchpad.local
 
 ---
 
-## 7. Test Preview Environments
+## 7. Setup Preview Environments (ApplicationSet)
 
-### Step 7.1: Setup ApplicationSet for PR Previews
+### Step 7.1: Create GitHub Token for Pull Request Generator
+
+Argo CD needs a GitHub token to watch for PRs with "deploy" label:
 
 ```bash
-# Create GitHub token with repo access (if not already created)
-# Go to: https://github.com/settings/tokens/new
-# Scopes: repo, read:packages
+# 1. Go to: https://github.com/settings/tokens/new
+# 2. Token name: "argocd-pr-generator"
+# 3. Expiration: 90 days (or custom)
+# 4. Scopes:
+#    - repo (for private repos)
+#    - public_repo (for public repos)
+#    - read:packages (to pull images)
+# 5. Click "Generate token"
+# 6. Copy the token (starts with ghp_...)
+```
 
+### Step 7.2: Create Kubernetes Secret
+
+```bash
+# Set your token
 export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
+# Create secret in argocd namespace
 kubectl create secret generic github-token \
   --from-literal=token=$GITHUB_TOKEN \
   -n argocd
 
-# Configure ApplicationSet
+# Verify secret
+kubectl get secret github-token -n argocd
+```
+
+### Step 7.3: Configure and Apply ApplicationSet
+
+```bash
+# Configure ApplicationSet with your GitHub org/repo
 export BASE_DOMAIN="launchpad.local"
 ./k8s/scripts/configure-argocd-applicationset.sh
 
 # Apply ApplicationSet
 kubectl apply -f k8s/argocd/applicationsets/launchpad-previews.configured.yaml
+
+# Verify ApplicationSet is created
+kubectl get applicationset -n argocd
+
+# Should show:
+# NAME                  AGE
+# launchpad-previews    10s
 ```
 
-### Step 7.2: Test Preview with Real PR
+### Step 7.4: How It Works
+
+The ApplicationSet Pull Request Generator:
+
+1. **Polls GitHub** every 3 minutes (requeueAfterSeconds: 180)
+2. **Finds PRs** with "deploy" label
+3. **Creates Application** named `launchpad-pr-{number}`
+4. **Deploys** to namespace `launchpad-pr-{number}`
+5. **Uses images** tagged `pr-{number}` from GHCR
+6. **Auto-deletes** when PR is closed or label removed
+
+---
+
+## 8. Test Preview Environments
+
+### Step 8.1: Test Preview with Real PR
 
 1. **Create PR on GitHub** with code changes
 2. **Add "deploy" label** to the PR
 3. **GitHub Actions** will automatically build images with `pr-{number}` tag
-4. **Argo CD ApplicationSet** will detect the PR and create preview environment
-5. **Add domain to /etc/hosts**:
+4. **Wait ~3 minutes** for ApplicationSet to poll GitHub
+5. **Verify Application created**:
+
+```bash
+kubectl get applications -n argocd | grep pr-
+
+# Should show:
+# launchpad-pr-123   Synced   Healthy
+```
+
+6. **Add domain to /etc/hosts**:
 
 ```bash
 # For PR #123
 sudo sh -c 'echo "127.0.0.1 preview-pr-123.launchpad.local" >> /etc/hosts'
 ```
 
-6. **Access preview**:
+7. **Access preview**:
 
 ```bash
 open http://preview-pr-123.launchpad.local
 ```
 
-### Step 7.3: Manual Preview Environment (Testing Only)
+### Step 8.2: Manual Preview Environment (Testing Only)
 
 For quick local testing without creating a real PR:
 
@@ -498,7 +551,7 @@ open http://preview-pr-1.launchpad.local
 
 ---
 
-## 8. Development Workflow
+## 9. Development Workflow
 
 ### Recommended: Local Development with Hot Reload
 
@@ -581,7 +634,7 @@ docker build -f apps/client/deployment/production/Dockerfile .
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### Issue: Pods stuck in ImagePullBackOff
 
@@ -685,6 +738,64 @@ kubectl get ingress argocd-server-ingress -n argocd -o yaml
 open https://argocd.launchpad.local
 ```
 
+### Issue: ApplicationSet not creating Applications for PRs
+
+**Problem:** PR has "deploy" label but no Application is created
+
+**Possible causes:**
+
+1. **ApplicationSet not installed:**
+
+```bash
+# Check if ApplicationSet exists
+kubectl get applicationset -n argocd
+
+# If missing, install it:
+export BASE_DOMAIN="launchpad.local"
+./k8s/scripts/configure-argocd-applicationset.sh
+kubectl apply -f k8s/argocd/applicationsets/launchpad-previews.configured.yaml
+```
+
+2. **Missing GitHub token secret:**
+
+```bash
+# Check if secret exists
+kubectl get secret github-token -n argocd
+
+# If missing, create it:
+kubectl create secret generic github-token \
+  --from-literal=token=YOUR_GITHUB_TOKEN \
+  -n argocd
+```
+
+3. **Invalid GitHub token or permissions:**
+
+```bash
+# Test token manually
+curl -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/YOUR_ORG/YOUR_REPO/pulls
+
+# Token needs 'repo' or 'public_repo' scope
+```
+
+4. **PR polling interval (wait 3 minutes):**
+
+```bash
+# ApplicationSet polls every 3 minutes
+# Check ApplicationSet logs
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-applicationset-controller
+
+# Force reconcile by restarting controller
+kubectl rollout restart deployment argocd-applicationset-controller -n argocd
+```
+
+5. **Check ApplicationSet status:**
+
+```bash
+# Describe ApplicationSet for errors
+kubectl describe applicationset launchpad-previews -n argocd
+```
+
 ### Issue: Argo CD showing "Unknown" health
 
 **Problem:** Application not syncing
@@ -743,7 +854,7 @@ sudo kill -9 <PID>
 
 ---
 
-## 10. Cleanup
+## 11. Cleanup
 
 ### Delete Everything
 
