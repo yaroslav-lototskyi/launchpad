@@ -26,12 +26,16 @@ print_error() {
 # Configuration
 ARGOCD_VERSION="${1:-v2.9.3}"
 NAMESPACE="argocd"
+CUSTOM_PASSWORD="${ARGOCD_ADMIN_PASSWORD:-}"  # Can set via env var
 
 print_info "========================================="
 print_info "Argo CD Setup for Launchpad"
 print_info "========================================="
 print_info "Version: $ARGOCD_VERSION"
 print_info "Namespace: $NAMESPACE"
+if [[ -n "$CUSTOM_PASSWORD" ]]; then
+    print_info "Custom admin password will be set"
+fi
 print_info "========================================="
 
 # Check kubectl
@@ -78,6 +82,18 @@ kubectl wait --for=condition=ready --timeout=300s \
 print_info "Argo CD pods:"
 kubectl get pods -n $NAMESPACE
 
+# Configure Argo CD for HTTP access (insecure mode for local development)
+print_info "Configuring Argo CD for HTTP access..."
+kubectl patch configmap argocd-cmd-params-cm -n $NAMESPACE --type merge \
+  -p '{"data":{"server.insecure":"true"}}' 2>/dev/null || \
+  kubectl create configmap argocd-cmd-params-cm -n $NAMESPACE \
+  --from-literal=server.insecure=true
+
+# Restart Argo CD server to apply changes
+print_info "Restarting Argo CD server..."
+kubectl rollout restart deployment/argocd-server -n $NAMESPACE
+kubectl rollout status deployment/argocd-server -n $NAMESPACE --timeout=120s
+
 # Install Argo CD CLI (optional)
 if ! command -v argocd &> /dev/null; then
     print_warn "Argo CD CLI not found"
@@ -88,10 +104,69 @@ if ! command -v argocd &> /dev/null; then
     echo "  chmod +x /usr/local/bin/argocd"
 fi
 
-# Get initial admin password
+# Get or set admin password
 print_info "========================================="
-print_info "Getting initial admin password..."
-ARGOCD_PASSWORD=$(kubectl -n $NAMESPACE get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+if [[ -n "$CUSTOM_PASSWORD" ]]; then
+    print_info "Setting custom admin password..."
+
+    # Get current password first
+    CURRENT_PASSWORD=$(kubectl -n $NAMESPACE get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo "")
+
+    if [[ -z "$CURRENT_PASSWORD" ]]; then
+        print_error "Could not get initial password. Wait for Argo CD to be fully ready."
+        exit 1
+    fi
+
+    # Use argocd CLI to change password (requires argocd CLI)
+    if command -v argocd &> /dev/null; then
+        # Login with initial password
+        argocd login --core
+
+        # Update password
+        argocd account update-password \
+          --current-password "$CURRENT_PASSWORD" \
+          --new-password "$CUSTOM_PASSWORD"
+
+        print_info "Custom password set successfully!"
+    else
+        print_warn "argocd CLI not found. Using kubectl method..."
+
+        # Fallback: try htpasswd if available
+        if command -v htpasswd &> /dev/null; then
+            BCRYPT_HASH=$(htpasswd -nbBC 10 "" "$CUSTOM_PASSWORD" | tr -d ':\n' | sed 's/^//')
+
+            kubectl -n $NAMESPACE patch secret argocd-secret \
+              -p "{\"stringData\": {\"admin.password\": \"$BCRYPT_HASH\", \"admin.passwordMtime\": \"$(date +%FT%T%Z)\"}}"
+
+            print_info "Custom password set successfully!"
+        else
+            print_warn "Neither argocd CLI nor htpasswd found."
+            print_warn "Using generated password. Install argocd CLI to set custom password:"
+            echo "  brew install argocd  # macOS"
+            echo "  # or download from: https://github.com/argoproj/argo-cd/releases"
+            CUSTOM_PASSWORD=""  # Reset to use generated password
+        fi
+    fi
+
+    if [[ -n "$CUSTOM_PASSWORD" ]]; then
+        ARGOCD_PASSWORD="$CUSTOM_PASSWORD"
+        # Delete initial admin secret (for security)
+        kubectl -n $NAMESPACE delete secret argocd-initial-admin-secret 2>/dev/null || true
+    else
+        ARGOCD_PASSWORD="$CURRENT_PASSWORD"
+    fi
+else
+    print_info "Getting initial admin password..."
+    ARGOCD_PASSWORD=$(kubectl -n $NAMESPACE get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null)
+
+    if [[ -z "$ARGOCD_PASSWORD" ]]; then
+        print_warn "Could not retrieve initial password. It may have been deleted."
+        print_warn "Reset password with: argocd account update-password"
+    else
+        print_info "Generated password retrieved"
+    fi
+fi
 
 print_info "========================================="
 print_info "Argo CD installed successfully!"
@@ -106,6 +181,11 @@ echo "     URL: https://localhost:8080"
 echo "     Username: admin"
 echo "     Password: $ARGOCD_PASSWORD"
 echo ""
+if [[ -z "$CUSTOM_PASSWORD" ]]; then
+    echo "  💡 Tip: Set custom password next time:"
+    echo "     ARGOCD_ADMIN_PASSWORD='your-password' ./k8s/scripts/argocd-setup.sh"
+    echo ""
+fi
 print_info "========================================="
 print_info "Next steps:"
 echo ""
@@ -113,7 +193,7 @@ echo "  1. Apply Ingress (optional):"
 echo "     kubectl apply -f k8s/argocd/install/argocd-ingress.yaml"
 echo ""
 echo "  2. Install Argo CD Image Updater:"
-echo "     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml"
+echo "     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/v0.15.0/manifests/install.yaml"
 echo ""
 echo "  3. Create Projects:"
 echo "     kubectl apply -f k8s/argocd/projects/"
@@ -131,7 +211,7 @@ else
 
     if [ "$install_updater" == "y" ]; then
         print_info "Installing Argo CD Image Updater..."
-        kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
+        kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/v0.15.0/manifests/install.yaml
 
         print_info "Waiting for Image Updater to be ready..."
         kubectl wait --for=condition=available --timeout=120s \
