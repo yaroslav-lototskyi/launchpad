@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
 
       - name: Check code formatting
-        run: pnpm format:check
+        run: pnpm prettier --check "**/*.{ts,tsx,js,jsx,json,md}"
 
       - name: Run linter
         run: pnpm lint
