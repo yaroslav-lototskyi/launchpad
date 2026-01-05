@@ -23,7 +23,11 @@
   },
   "files.associations": {
     "*.yaml": "yaml",
-    "*.yml": "yaml"
+    "*.yml": "yaml",
+    "**/infra/helm/**/templates/*.yaml": "helm"
+  },
+  "yaml.schemas": {
+    "kubernetes": ["!infra/helm/**/templates/*.yaml"]
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

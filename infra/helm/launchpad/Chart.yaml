@@ -1,0 +1,13 @@
+apiVersion: v2
+name: launchpad
+description: A Helm chart for Launchpad application (API + Client)
+type: application
+version: 0.1.0
+appVersion: '0.1.0'
+maintainers:
+  - name: Launchpad Team
+keywords:
+  - launchpad
+  - nestjs
+  - react
+  - fullstack

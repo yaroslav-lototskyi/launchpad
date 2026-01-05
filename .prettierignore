@@ -7,3 +7,6 @@ coverage
 .turbo
 .env*
 pnpm-lock.yaml
+
+# Helm templates contain Go templating syntax
+infra/helm/**/templates/
