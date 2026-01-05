@@ -1,0 +1,160 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+        default: 'development'
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: false
+        default: 'latest'
+
+  workflow_run:
+    workflows: ['Docker Build and Push']
+    types: [completed]
+    branches: [main, develop]
+
+env:
+  AWS_REGION: us-east-1
+  KUBECTL_VERSION: '1.28.0'
+  HELM_VERSION: '3.13.0'
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'auto' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" != "" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "namespace=launchpad-${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "namespace=launchpad-production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "namespace=launchpad-staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "namespace=launchpad-development" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name launchpad-${{ steps.env.outputs.environment }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ steps.env.outputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Determine image tag
+        id: image
+        run: |
+          if [[ "${{ github.event.inputs.image_tag }}" != "" ]]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install launchpad ./infra/helm/launchpad \
+            --namespace ${{ steps.env.outputs.namespace }} \
+            --values infra/helm/launchpad/values-${{ steps.env.outputs.environment }}.yaml \
+            --set api.image.repository=${{ steps.login-ecr.outputs.registry }}/launchpad/api \
+            --set api.image.tag=${{ steps.image.outputs.tag }} \
+            --set client.image.repository=${{ steps.login-ecr.outputs.registry }}/launchpad/client \
+            --set client.image.tag=${{ steps.image.outputs.tag }} \
+            --wait \
+            --timeout 10m
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/launchpad-api -n ${{ steps.env.outputs.namespace }}
+          kubectl rollout status deployment/launchpad-client -n ${{ steps.env.outputs.namespace }}
+
+      - name: Get deployment info
+        run: |
+          echo "::group::Pods"
+          kubectl get pods -n ${{ steps.env.outputs.namespace }}
+          echo "::endgroup::"
+
+          echo "::group::Services"
+          kubectl get svc -n ${{ steps.env.outputs.namespace }}
+          echo "::endgroup::"
+
+          echo "::group::Ingress"
+          kubectl get ingress -n ${{ steps.env.outputs.namespace }}
+          echo "::endgroup::"
+
+      - name: Run smoke tests
+        run: |
+          # Get ingress URL
+          INGRESS_URL=$(kubectl get ingress -n ${{ steps.env.outputs.namespace }} -o jsonpath='{.items[0].spec.rules[0].host}')
+
+          if [ -n "$INGRESS_URL" ]; then
+            echo "Testing health endpoint: https://${INGRESS_URL}/api/v1/health"
+
+            # Wait for ingress to be ready
+            sleep 30
+
+            # Test API health endpoint
+            response=$(curl -s -o /dev/null -w "%{http_code}" "https://${INGRESS_URL}/api/v1/health" || echo "000")
+
+            if [ "$response" == "200" ]; then
+              echo "✅ API health check passed"
+            else
+              echo "❌ API health check failed with status code: $response"
+              exit 1
+            fi
+          else
+            echo "⚠️  Ingress URL not found, skipping smoke tests"
+          fi
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to ${{ steps.env.outputs.environment }} successful!"
+          else
+            echo "❌ Deployment to ${{ steps.env.outputs.environment }} failed!"
+          fi
