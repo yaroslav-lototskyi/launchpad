@@ -496,20 +496,28 @@ Use one of:
 
 ## Integration with GitHub Actions
 
-GitHub Actions still handles CI (build, test):
+GitHub Actions handles CI (build, test, push images):
 
 ```yaml
+# .github/workflows/ci.yml
+# Runs tests, linting, type checking
+
 # .github/workflows/docker-build.yml
 # Builds Docker images and pushes to registry
-
-# .github/workflows/gitops-sync.yaml
-# Optionally triggers Argo CD sync
 ```
 
 **Separation of concerns**:
 
 - **GitHub Actions**: CI (build, test, push images)
 - **Argo CD**: CD (deploy, sync, monitor)
+
+**How they work together**:
+
+1. GitHub Actions builds and pushes Docker image (e.g., `develop`, `staging`, `v1.2.3`)
+2. Argo CD Image Updater detects new image (polls every 2 minutes)
+3. Image Updater updates Helm values in Git (creates commit)
+4. Argo CD detects Git change (polls every 3 minutes)
+5. Argo CD syncs automatically (dev/staging) or waits for manual approval (production)
 
 ## Security Considerations
 
