@@ -54,16 +54,25 @@ print_info "Connected to cluster: $(kubectl config current-context)"
 print_info "Creating namespace: $NAMESPACE"
 kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-# Install Argo CD
-print_info "Installing Argo CD $ARGOCD_VERSION..."
-kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj/argo-cd/$ARGOCD_VERSION/manifests/install.yaml
+# Check if Argo CD is already installed
+if kubectl get deployment argocd-server -n $NAMESPACE &> /dev/null; then
+    print_warn "Argo CD is already installed, skipping installation..."
+else
+    # Install Argo CD
+    print_info "Installing Argo CD $ARGOCD_VERSION..."
+    kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj/argo-cd/$ARGOCD_VERSION/manifests/install.yaml
+fi
 
 # Wait for Argo CD to be ready
 print_info "Waiting for Argo CD to be ready..."
 kubectl wait --for=condition=available --timeout=300s \
     deployment/argocd-server \
     deployment/argocd-repo-server \
-    deployment/argocd-application-controller \
+    -n $NAMESPACE
+
+# Wait for application controller (StatefulSet)
+kubectl wait --for=condition=ready --timeout=300s \
+    pod -l app.kubernetes.io/name=argocd-application-controller \
     -n $NAMESPACE
 
 print_info "Argo CD pods:"
@@ -115,18 +124,22 @@ echo ""
 print_info "========================================="
 
 # Optionally install Image Updater
-read -p "Install Argo CD Image Updater? (y/n): " install_updater
+if kubectl get deployment argocd-image-updater -n $NAMESPACE &> /dev/null; then
+    print_warn "Argo CD Image Updater is already installed"
+else
+    read -p "Install Argo CD Image Updater? (y/n): " install_updater
 
-if [ "$install_updater" == "y" ]; then
-    print_info "Installing Argo CD Image Updater..."
-    kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
+    if [ "$install_updater" == "y" ]; then
+        print_info "Installing Argo CD Image Updater..."
+        kubectl apply -n $NAMESPACE -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
 
-    print_info "Waiting for Image Updater to be ready..."
-    kubectl wait --for=condition=available --timeout=120s \
-        deployment/argocd-image-updater \
-        -n $NAMESPACE || true
+        print_info "Waiting for Image Updater to be ready..."
+        kubectl wait --for=condition=available --timeout=120s \
+            deployment/argocd-image-updater \
+            -n $NAMESPACE || true
 
-    print_info "Image Updater installed!"
+        print_info "Image Updater installed!"
+    fi
 fi
 
 print_info "Setup complete! 🚀"

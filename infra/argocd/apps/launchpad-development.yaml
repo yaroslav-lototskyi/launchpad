@@ -10,21 +10,19 @@ metadata:
   annotations:
     # Image Updater annotations - automatically update images
     argocd-image-updater.argoproj.io/image-list: |
-      api=ghcr.io/YOUR_ORG/launchpad/api:develop,
-      client=ghcr.io/YOUR_ORG/launchpad/client:develop
+      api=ghcr.io/yaroslav-lototskyi/launchpad/api:latest,
+      client=ghcr.io/yaroslav-lototskyi/launchpad/client:latest
     argocd-image-updater.argoproj.io/api.update-strategy: latest
     argocd-image-updater.argoproj.io/client.update-strategy: latest
-    argocd-image-updater.argoproj.io/write-back-method: git
-    argocd-image-updater.argoproj.io/git-branch: develop
+    argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   # Project this application belongs to
   project: launchpad-development
 
   # Source - where the manifests are
   source:
-    # Replace with your Git repository
-    repoURL: https://github.com/YOUR_ORG/launchpad
-    targetRevision: develop # Branch to track
+    repoURL: https://github.com/yaroslav-lototskyi/launchpad
+    targetRevision: main # Branch to track
     path: infra/helm/launchpad # Path to Helm chart
 
     # Helm specific configuration
@@ -36,9 +34,9 @@ spec:
       # Additional parameters
       parameters:
         - name: api.image.tag
-          value: develop # Will be updated by Image Updater
+          value: latest # Will be updated by Image Updater
         - name: client.image.tag
-          value: develop
+          value: latest
 
   # Destination - where to deploy
   destination:
