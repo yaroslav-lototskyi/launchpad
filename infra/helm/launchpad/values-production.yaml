@@ -49,28 +49,11 @@ client:
     targetCPUUtilizationPercentage: 70
 
 ingress:
-  enabled: true
-  className: 'nginx'
+  # Inherits from base values.yaml, domain comes from global.domain
   annotations:
     cert-manager.io/cluster-issuer: 'letsencrypt-prod'
     nginx.ingress.kubernetes.io/rate-limit: '100'
     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-  hosts:
-    - host: launchpad.io
-      paths:
-        - path: /api
-          pathType: Prefix
-          backend:
-            service:
-              name: launchpad-api
-              port: 3001
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: launchpad-client
-              port: 80
   tls:
     - secretName: launchpad-production-tls
-      hosts:
-        - launchpad.io
+      # hosts will use global.domain from template

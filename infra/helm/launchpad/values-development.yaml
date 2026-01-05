@@ -39,22 +39,6 @@ client:
       memory: 32Mi
 
 ingress:
-  enabled: true
-  className: 'nginx'
+  # Inherits from base values.yaml, domain comes from global.domain
   annotations: {}
-  hosts:
-    - host: launchpad.local
-      paths:
-        - path: /api
-          pathType: Prefix
-          backend:
-            service:
-              name: launchpad-api
-              port: 3001
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: launchpad-client
-              port: 80
   tls: []

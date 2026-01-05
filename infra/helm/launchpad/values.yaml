@@ -115,8 +115,9 @@ ingress:
   className: 'nginx'
   annotations:
     cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+  # Host will use global.domain if not overridden
   hosts:
-    - host: launchpad.local
+    - host: null # Will be set from global.domain in template
       paths:
         - path: /api
           pathType: Prefix
@@ -132,8 +133,7 @@ ingress:
               port: 80
   tls:
     - secretName: launchpad-tls
-      hosts:
-        - launchpad.local
+      # hosts will use global.domain from template
 
 # Service Account
 serviceAccount:

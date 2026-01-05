@@ -16,8 +16,10 @@ function App() {
       setLoading(true);
       setError(null);
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/v1/health`);
+      // Use relative path for Kubernetes/production, localhost for local dev
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const apiPath = apiUrl ? `${apiUrl}/api/v1/health` : '/api/v1/health';
+      const response = await fetch(apiPath);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

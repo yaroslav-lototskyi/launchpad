@@ -16,6 +16,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/client/node_modules ./apps/client/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
+# Override API URL to use relative path (for Kubernetes/Ingress)
+ENV VITE_API_BASE_URL=""
 RUN pnpm --filter @repo/client build
 
 # Stage 4: Production runtime with Nginx
