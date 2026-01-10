@@ -131,7 +131,7 @@ chmod +x /usr/local/bin/argocd
 ### 4. Install Image Updater
 
 ```bash
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/v0.15.0/manifests/install.yaml
 ```
 
 ## Configuration
