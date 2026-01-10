@@ -60,8 +60,8 @@ jobs:
             type=ref,event=pr,prefix=pr-
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,format=long,prefix=,enable=true
+            type=sha,format=long,prefix=,enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=${{ github.event.pull_request.head.sha }},enable=${{ github.event_name == 'pull_request' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push API image
@@ -113,8 +113,8 @@ jobs:
             type=ref,event=pr,prefix=pr-
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,format=long,prefix=,enable=true
+            type=sha,format=long,prefix=,enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=${{ github.event.pull_request.head.sha }},enable=${{ github.event_name == 'pull_request' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Client image
